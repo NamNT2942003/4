@@ -6,3 +6,4 @@ exercise_03/.env
 *.env
 !*.env.example
 !.env.example
+

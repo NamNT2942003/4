@@ -24,3 +24,4 @@ curl -i http://localhost:8080
 
 echo "=== 7. Kiểm tra truy cập Database từ máy Host (Port 5432 - Phải bị chặn) ==="
 nc -zv 127.0.0.1 5432 2>&1 || echo "Port 5432 bị chặn thành công! Database đã được cô lập an toàn."
+

@@ -26,3 +26,4 @@ services:
 networks:
   storex-net:
     driver: bridge
+
