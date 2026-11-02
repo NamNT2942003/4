@@ -182,3 +182,4 @@ Hệ thống QuickBite đã được container hóa hoàn toàn theo đúng tiê
 - Hệ thống đa dịch vụ hoạt động ổn định, liên kết thông suốt qua Docker Network `quickbite_network`.
 - Dữ liệu cơ sở dữ liệu được bảo vệ an toàn qua Named Volume `quickbite_db_data`.
 - Vòng đời dịch vụ được điều khiển dễ dàng và nhất quán bằng các lệnh Docker Compose chuẩn.
+

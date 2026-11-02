@@ -15,3 +15,4 @@ EXPOSE 8080
 
 # Khai báo lệnh thực thi khi container khởi động
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
