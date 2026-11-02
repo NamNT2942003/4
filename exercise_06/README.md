@@ -163,3 +163,4 @@ esac
 - API `/actuator/health` trả về mã lỗi 503 (`status: DOWN`).
 - Script phát hiện lỗi, in thông báo đỏ, in 20 dòng log của backend giải thích nguyên nhân (`FATAL: password authentication failed`).
 - Tự động gọi `docker compose down` dọn dẹp container và thoát mã `1`.
+
