@@ -1,161 +1,110 @@
-# StoreX DevOps Practice - Session 04: Docker Compose Basic Development Environment
+# StoreX DevOps Practice - Session 04: Docker Compose Ecosystem
 
 - **Học viên:** NamNT (NamNTHE176286)
 - **Repository:** [NamNT2942003/4](https://github.com/NamNT2942003/4)
-- **Bài tập 1:** Khởi tạo môi trường phát triển cơ bản với Docker Compose
+- **Dự án thực hành:** StoreX Microservices Architecture (Backend Spring Boot, PostgreSQL, Redis)
 
 ---
 
-## 1. Mục tiêu bài tập
-- Hiểu và áp dụng cấu trúc file `docker-compose.yml` để điều phối nhiều container liên kết (Backend Spring Boot và Database PostgreSQL).
-- Nắm vững cơ chế mạng nội bộ (**User-defined Bridge Network**), cơ chế phân giải tên miền nội bộ (**Embedded DNS Service**) trong Docker Compose.
-- Chẩn đoán, giải thích và khắc phục lỗi `Connection refused` khi ứng dụng containerized kết nối cơ sở dữ liệu.
+## Danh mục bài tập hoàn thành (Session 04)
+
+| Bài tập | Nội dung | File bàn giao | Minh chứng |
+| :--- | :--- | :--- | :--- |
+| **Bài tập 1** | Khởi tạo môi trường phát triển cơ bản & Sửa lỗi kết nối mạng (Service Name DNS) | `exercise_01/docker-compose.yml`, `README.md` | `evidence_01_error.png`<br>`evidence_02_success.png` |
+| **Bài tập 2** | Quản lý dữ liệu bền vững (Volumes) và Dependency với Healthcheck (`service_healthy`) | `exercise_02/docker-compose.yml`, `HEALTHCHECK_EXPLANATION.md` | `evidence_01_startup_dependency.png`<br>`evidence_02_data_persistence.png` |
 
 ---
 
-## 2. Phân tích nguyên nhân lỗi kết nối (`Connection refused`)
+## Chi tiết Bài tập 2: Quản lý dữ liệu (Volumes) & Dependency với Healthcheck
 
-### Hiện tượng
-Khi khởi chạy hệ thống bằng file `docker-compose.yml` ban đầu, container `backend` báo lỗi:
-```text
-org.postgresql.util.PSQLException: Connection to localhost:5432 refused. Check that the hostname and port are correct and that the postmaster is accepting TCP/IP connections.
-```
+### 1. Phân tích vấn đề kỹ thuật
+1. **Lỗi Crash Backend do Race Condition:**
+   - Mặc định `depends_on: [postgres, redis]` chỉ đợi container ở trạng thái `running` (hệ điều hành đã khởi tạo process).
+   - PostgreSQL cần từ 5 - 15 giây để khởi tạo database cluster, chạy bootstrap script, cấp quyền và mở cổng socket tiếp nhận kết nối.
+   - Redis cần thời gian load dataset và bind port `6379`.
+   - Backend khởi động ngay khi các container phụ thuộc vừa start -> Kết nối bị từ chối (`Connection refused`) -> Crash loop.
+2. **Lỗi Mất mát Dữ liệu (Data Loss):**
+   - Không cấu hình Volume khiến toàn bộ dữ liệu PostgreSQL được lưu trữ tạm thời trong writable container layer. Khi thực hiện `docker-compose down`, container bị hủy bỏ và toàn bộ dữ liệu bị xóa sạch.
 
-### Nguyên nhân kỹ thuật dựa trên cơ chế mạng của Docker Compose
-1. **Sự cô lập Network Namespace:**
-   - Mỗi Docker container khi khởi chạy được cấp phát một **Network Namespace** riêng biệt với loopback interface (`lo` - `127.0.0.1`) và địa chỉ IP riêng trong bridge network.
-   - Khi cấu hình `SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storex`, từ khóa `localhost` bên trong container `backend` trỏ về chính network interface của container `backend`, **không phải máy host** và **không phải container `postgres`**.
-   - Do trong container `backend` không có tiến trình PostgreSQL nào lắng nghe ở cổng `5432`, hệ điều hành từ chối gói tin TCP SYN (`RST-ACK`), dẫn đến lỗi `Connection refused`.
+### 2. Cấu hình hoàn chỉnh (`exercise_02/docker-compose.yml`)
 
-2. **Cơ chế mạng và Embedded DNS của Docker Compose:**
-   - Khi chạy `docker compose up`, Docker tự động khởi tạo một mạng bridge mặc định (VD: `4_default`).
-   - Docker tích hợp sẵn một **Embedded DNS Server** (lắng nghe tại IP `127.0.0.11`) bên trong mỗi container.
-   - Các container trong cùng mạng bridge có thể tìm thấy nhau thông qua **Service Name** (tên dịch vụ định nghĩa trong `docker-compose.yml`).
-   - Do đó, để `backend` kết nối tới database `postgres`, hostname phải là tên service: **`postgres`**.
-
----
-
-## 3. Chỉnh sửa cấu hình `docker-compose.yml`
-
-### Diff so sánh thay đổi:
-
-```diff
- services:
-   backend:
-     image: storex-backend:latest
-     ports:
-       - "8080:8080"
-     environment:
--      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storex
-+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/storex
-       - SPRING_DATASOURCE_USERNAME=postgres
-       - SPRING_DATASOURCE_PASSWORD=secret
-+    depends_on:
-+      - postgres
-
-   postgres:
-     image: postgres:13
-     ports:
-       - "5432:5432"
-     environment:
-       - POSTGRES_DB=storex
-       - POSTGRES_USER=postgres
-       - POSTGRES_PASSWORD=secret
-```
-
-### File `docker-compose.yml` hoàn chỉnh:
 ```yaml
 version: '3.8'
 
 services:
   backend:
-    image: storex-backend:latest
+    image: storex-backend:v2
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/storex
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=secret
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/storex_db
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   postgres:
     image: postgres:13
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=storex
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=storex_db
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d storex_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_data:
+    driver: local
 ```
+
+### 3. Minh chứng thực nghiệm
+
+#### 3.1. Khởi động tuần tự theo Healthcheck (`condition: service_healthy`)
+![Thứ tự khởi động Backend theo Healthcheck](./exercise_02/evidence_01_startup_dependency.png)
+
+- `postgres-1` và `redis-1` khởi động trước và chuyển sang trạng thái `healthy`.
+- `backend-1` chỉ khởi động sau khi cả hai container phụ thuộc đã `healthy`.
+
+#### 3.2. Kiểm chứng dữ liệu bền vững (Data Persistence qua Volume)
+![Kiểm chứng dữ liệu toàn vẹn qua Volume](./exercise_02/evidence_02_data_persistence.png)
+
+1. Tạo bảng `products` và chèn 3 bản ghi mẫu vào PostgreSQL.
+2. Thực hiện `docker compose down` xóa sạch toàn bộ container.
+3. Khởi chạy lại với `docker compose up -d`.
+4. Truy vấn `SELECT * FROM products;` -> **Dữ liệu vẫn còn nguyên vẹn 100%!**
 
 ---
 
-## 4. Minh chứng thực nghiệm (Logs & Screenshots)
+## Chi tiết Bài tập 1: Khởi tạo môi trường phát triển cơ bản
 
-### 4.1. Minh chứng lỗi trước khi sửa (Localhost - Connection Refused)
-![Lỗi kết nối khi dùng localhost](./evidence_01_error.png)
+### 1. Nguyên nhân lỗi kết nối `localhost`
+- Trong Docker, `localhost` bên trong container trỏ về chính loopback interface (`127.0.0.1`) của container đó.
+- Để giao tiếp giữa các container trong cùng mạng bridge, cần sử dụng **Service Name** do Docker Embedded DNS phân giải: `jdbc:postgresql://postgres:5432/storex`.
 
-**Trích xuất log lỗi:**
-```text
-backend-1   | :: Spring Boot ::                (v3.1.2)
-backend-1   | 2026-11-02 10:49:17.501  INFO 1 --- [main] c.s.backend.StorexBackendApplication  : Active profile: default
-backend-1   | 2026-11-02 10:49:17.501  INFO 1 --- [main] c.s.backend.StorexBackendApplication  : Configuring DataSource URL: jdbc:postgresql://localhost:5432/storex
-backend-1   | 2026-11-02 10:49:18.502  INFO 1 --- [main] com.zaxxer.hikari.HikariDataSource     : HikariPool-1 - Starting...
-backend-1   | 2026-11-02 10:49:19.517 ERROR 1 --- [main] com.zaxxer.hikari.pool.HikariPool      : HikariPool-1 - Exception during pool initialization.
-backend-1   | org.postgresql.util.PSQLException: Connection to localhost:5432 refused.
-backend-1   | 2026-11-02 10:49:19.517 ERROR 1 --- [main] o.s.boot.SpringApplication             : Application run failed
-backend-1 exited with code 1
-```
-
-### 4.2. Minh chứng thành công sau khi sửa (`postgres:5432`)
-![Kết nối thành công với postgres DNS](./evidence_02_success.png)
-
-**Trích xuất log thành công:**
-```text
-backend-1  | :: Spring Boot ::                (v3.1.2)
-backend-1  | 2026-11-02 10:49:38.244  INFO 1 --- [main] c.s.backend.StorexBackendApplication  : Active profile: default
-backend-1  | 2026-11-02 10:49:38.245  INFO 1 --- [main] c.s.backend.StorexBackendApplication  : Configuring DataSource with URL: jdbc:postgresql://postgres:5432/storex
-backend-1  | 2026-11-02 10:49:39.245  INFO 1 --- [main] com.zaxxer.hikari.HikariDataSource     : HikariPool-1 - Starting...
-backend-1  | 2026-11-02 10:49:40.262  INFO 1 --- [main] com.zaxxer.hikari.pool.HikariPool      : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5c1e9a2b
-backend-1  | 2026-11-02 10:49:40.262  INFO 1 --- [main] com.zaxxer.hikari.HikariDataSource     : HikariPool-1 - Start completed.
-backend-1  | 2026-11-02 10:49:41.262  INFO 1 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer: Tomcat started on port(s): 8080 (http) with context path ''
-backend-1  | 2026-11-02 10:49:41.262  INFO 1 --- [main] c.s.backend.StorexBackendApplication  : Started StorexBackendApplication in 3.42 seconds
-backend-1  | 2026-11-02 10:49:41.262  INFO 1 --- [main] c.s.backend.StorexBackendApplication  : [StoreX] Database connection established successfully to PostgreSQL database at postgres:5432!
-```
-
-**Kiểm tra phản hồi HTTP từ máy Host:**
-```bash
-curl -i http://localhost:8080
-```
-```http
-HTTP/1.0 200 OK
-Content-type: application/json
-
-{"status":"UP","database":"CONNECTED","service":"storex-backend"}
-```
-
----
-
-## 5. Hướng dẫn chạy và tái hiện
-
-### Khởi chạy môi trường chuẩn:
-```bash
-docker compose up -d
-```
-
-### Giám sát trạng thái và log kết nối:
-```bash
-docker compose ps
-docker compose logs backend
-```
-
-### Kiểm tra API:
-```bash
-curl http://localhost:8080
-```
-
-### Dọn dẹp môi trường:
-```bash
-docker compose down -v
-```
+### 2. Minh chứng thực nghiệm
+- **Minh chứng lỗi ban đầu:** `exercise_01/evidence_01_error.png`
+- **Minh chứng sửa thành công:** `exercise_01/evidence_02_success.png`

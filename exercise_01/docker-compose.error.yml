@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  backend:
+    image: storex-backend:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/storex
+      # Lỗi: gọi 'localhost' trong container sẽ trỏ về chính container backend
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secret
+
+  postgres:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=storex
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
