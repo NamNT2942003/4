@@ -13,3 +13,4 @@ services:
 
   product_service:
     image: storex-product:latest
+

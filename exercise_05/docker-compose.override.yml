@@ -1,0 +1,15 @@
+version: '3.8'
+
+# Staging / Development Override (Tự động nạp khi chạy 'docker compose up' mặc định)
+services:
+  backend:
+    environment:
+      - ENV=staging
+      - DEBUG=true
+    ports:
+      - "8080:8080" # Ánh xạ port để dev/tester kiểm thử và debug API
+    restart: "no"
+
+  postgres:
+    ports:
+      - "5432:5432" # Mở port cho các công cụ GUI như DBeaver, pgAdmin debug DB

@@ -1,0 +1,29 @@
+version: '3.8'
+
+# Production Configuration (Kích hoạt bằng: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d)
+services:
+  backend:
+    environment:
+      - ENV=production
+      - DEBUG=false
+    restart: always
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  postgres:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 512M

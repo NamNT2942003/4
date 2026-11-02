@@ -15,3 +15,4 @@ curl -i http://localhost/products/
 
 echo "=== 5. Kiểm tra Access Logs của Nginx ==="
 docker compose logs nginx_proxy --tail 10
+

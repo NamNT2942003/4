@@ -1,0 +1,25 @@
+version: '3.8'
+
+# Base Compose File (Chứa định nghĩa chung cho mọi môi trường - DRY Principle)
+services:
+  backend:
+    image: storex-backend:v4
+    environment:
+      - ENV=dev
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=storex_db
+      - POSTGRES_USER=storex_admin
+      - POSTGRES_PASSWORD=storex_secret_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+    driver: local
