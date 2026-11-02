@@ -168,3 +168,4 @@ docker inspect exercise_05-backend-1 --format 'Restart: {{.HostConfig.RestartPol
 # Kết quả:
 Restart: always | Memory: 536870912 (512MB) | NanoCPUs: 500000000 (0.5 CPU)
 ```
+

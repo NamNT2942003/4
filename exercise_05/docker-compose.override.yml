@@ -13,3 +13,4 @@ services:
   postgres:
     ports:
       - "5432:5432" # Mở port cho các công cụ GUI như DBeaver, pgAdmin debug DB
+

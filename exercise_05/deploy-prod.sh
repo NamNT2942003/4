@@ -18,3 +18,4 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 echo ""
 echo "=== Kiểm tra Resource Limits & Restart Policy trên Container ==="
 docker inspect exercise_05-backend-1 --format 'Container: {{.Name}} | RestartPolicy: {{.HostConfig.RestartPolicy.Name}} | MemoryLimit: {{.HostConfig.Memory}} bytes | NanoCPUs: {{.HostConfig.NanoCPUs}}'
+

@@ -1,9 +1,9 @@
-# Ignore environment files containing sensitive credentials
 .env
 .env.local
 .env.*.local
 exercise_03/.env
+exercise_06/.env
+quickbite-project/.env
 *.env
 !*.env.example
 !.env.example
-

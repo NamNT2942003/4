@@ -18,3 +18,4 @@ echo ""
 echo "=== Kiểm tra Endpoint API Staging ==="
 sleep 2
 curl -i http://localhost:8080
+
