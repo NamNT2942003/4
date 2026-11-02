@@ -2,49 +2,27 @@ version: '3.8'
 
 services:
   backend:
-    image: storex-backend:v2
+    image: storex-backend:v3
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/storex_db
-      - SPRING_DATASOURCE_USERNAME=admin
-      - SPRING_DATASOURCE_PASSWORD=admin
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    networks:
+      - storex-net
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - postgres
 
   postgres:
     image: postgres:13
-    ports:
-      - "5432:5432"
+    # Đã loại bỏ ports mapping 5432 để ngăn host truy cập trực tiếp
     environment:
-      - POSTGRES_DB=storex_db
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d storex_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+    networks:
+      - storex-net
 
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
-
-volumes:
-  postgres_data:
-    driver: local
+networks:
+  storex-net:
+    driver: bridge

@@ -16,3 +16,4 @@ docker compose logs backend
 
 echo "=== 5. Kiểm thử Endpoint API Backend ==="
 curl -i http://localhost:8080
+

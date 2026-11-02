@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    image: storex-backend:v3
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    networks:
+      - storex-net
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:13
+    # Đã loại bỏ ports mapping 5432 để ngăn host truy cập trực tiếp
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+    networks:
+      - storex-net
+
+networks:
+  storex-net:
+    driver: bridge

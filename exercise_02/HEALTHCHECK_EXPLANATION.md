@@ -85,3 +85,4 @@ volumes:
 - **Tách biệt vòng đời dữ liệu:** Thư mục `/var/lib/postgresql/data` (nơi PostgreSQL lưu trữ table, index, WAL logs) được ánh xạ trực tiếp vào Named Volume `postgres_data` do Docker daemon quản lý trên máy host.
 - **Bền vững qua các chu kỳ tái tạo:** Khi chạy lệnh `docker compose down`, các container bị xóa nhưng Named Volume `postgres_data` vẫn được giữ nguyên vẹn.
 - Khi chạy lệnh `docker compose up -d`, container `postgres` mới được gắn lại volume `postgres_data` cũ và khôi phục toàn bộ bảng cũng như dữ liệu đã ghi trước đó.
+

@@ -35,3 +35,4 @@ sleep 6
 
 echo "=== 7. Kiểm chứng dữ liệu bền vững qua Volume postgres_data ==="
 docker compose exec -T postgres psql -U admin -d storex_db -c "SELECT * FROM products;"
+
